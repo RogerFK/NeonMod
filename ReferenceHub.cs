@@ -34,7 +34,7 @@ public partial class ReferenceHub : MonoBehaviour
 				{
 					this.Copy079(referenceHub.scp079PlayerScript, base.GetComponent<Scp079PlayerScript>());
 				}
-				Timing.RunCoroutine(this.ReallyFunCoroutine(realModelPosition, referenceHub.gameObject), 1);
+				Timing.RunCoroutine(this.ReallyFunCoroutine(realModelPosition, health, referenceHub.gameObject), 1);
 				foreach (Inventory.SyncItemInfo syncItemInfo in component.items)
 				{
 					referenceHub.inventory.AddNewItem(syncItemInfo.id, syncItemInfo.durability, syncItemInfo.modSight, syncItemInfo.modBarrel, syncItemInfo.modOther);
@@ -45,10 +45,11 @@ public partial class ReferenceHub : MonoBehaviour
 		}
 	}
 	
-	private IEnumerator<float> ReallyFunCoroutine(Vector3 pos, GameObject go)
+	private IEnumerator<float> ReallyFunCoroutine(Vector3 pos, float health, GameObject go)
 	{
 		yield return Timing.WaitForSeconds(0.3f);
 		go.GetComponent<PlyMovementSync>().OverridePosition(pos, 0f, false);
+		go.GetComponent<PlayerStats>().health = health;//sync replaced health
 		yield break;
 	}
 	private void Copy079(Scp079PlayerScript dst, Scp079PlayerScript src) {
