@@ -12,7 +12,7 @@ public partial class ReferenceHub : MonoBehaviour
 	{
 		ReferenceHub.Hubs.Remove(base.gameObject);
 		RoleType curClass = base.gameObject.GetComponent<CharacterClassManager>().CurClass;
-		if (curClass == RoleType.Spectator)
+		if (curClass == RoleType.Spectator || curClass == RoleType.Tutorial)//for the servers that use Tutorial as admin role
 		{
 			return;
 		}
@@ -23,16 +23,18 @@ public partial class ReferenceHub : MonoBehaviour
 		string @string = ConfigFile.ServerConfig.GetString("neon_replace_message", "You've replaced a player that disconnected.");
 		Inventory component = base.GetComponent<Inventory>();
 		Vector3 realModelPosition = base.GetComponent<PlyMovementSync>().RealModelPosition;
+		float y = base.GetComponent<PlyMovementSync>().Rotations.y;
+		float health = base.GetComponent<PlayerStats>().health;
 		foreach (ReferenceHub referenceHub in ReferenceHub.Hubs.Values)
 		{
-			if (!(PlayerManager.localPlayer == referenceHub.gameObject) && referenceHub.characterClassManager.CurClass == RoleType.Spectator)
+			if (!(PlayerManager.localPlayer == referenceHub.gameObject) && referenceHub.characterClassManager.CurClass == RoleType.Spectator && !referenceHub.gameObject.GetComponent<CharacterClassManager>().GetComponent<ServerRoles>().OverwatchEnabled)
 			{
 				referenceHub.characterClassManager.SetPlayersClass(curClass, referenceHub.gameObject, true, false);
 				if (curClass == RoleType.Scp079)
 				{
 					this.Copy079(referenceHub.scp079PlayerScript, base.GetComponent<Scp079PlayerScript>());
 				}
-				Timing.RunCoroutine(this.ReallyFunCoroutine(realModelPosition, referenceHub.gameObject), 1);
+				Timing.RunCoroutine(this.ReallyFunCoroutine(realModelPosition, health, referenceHub.gameObject), 1);
 				foreach (Inventory.SyncItemInfo syncItemInfo in component.items)
 				{
 					referenceHub.inventory.AddNewItem(syncItemInfo.id, syncItemInfo.durability, syncItemInfo.modSight, syncItemInfo.modBarrel, syncItemInfo.modOther);
@@ -43,10 +45,11 @@ public partial class ReferenceHub : MonoBehaviour
 		}
 	}
 	
-	private IEnumerator<float> ReallyFunCoroutine(Vector3 pos, GameObject go)
+	private IEnumerator<float> ReallyFunCoroutine(Vector3 pos, float health, GameObject go)
 	{
 		yield return Timing.WaitForSeconds(0.3f);
 		go.GetComponent<PlyMovementSync>().OverridePosition(pos, 0f, false);
+		go.GetComponent<PlayerStats>().health = health;//sync replaced health
 		yield break;
 	}
 	private void Copy079(Scp079PlayerScript dst, Scp079PlayerScript src) {
