@@ -12,7 +12,7 @@ public partial class ReferenceHub : MonoBehaviour
 	{
 		ReferenceHub.Hubs.Remove(base.gameObject);
 		RoleType curClass = base.gameObject.GetComponent<CharacterClassManager>().CurClass;
-		if (curClass == RoleType.Spectator)
+		if (curClass == RoleType.Spectator || curClass == RoleType.Tutorial)//for the servers that use Tutorial as admin role
 		{
 			return;
 		}
@@ -23,9 +23,11 @@ public partial class ReferenceHub : MonoBehaviour
 		string @string = ConfigFile.ServerConfig.GetString("neon_replace_message", "You've replaced a player that disconnected.");
 		Inventory component = base.GetComponent<Inventory>();
 		Vector3 realModelPosition = base.GetComponent<PlyMovementSync>().RealModelPosition;
+		float y = base.GetComponent<PlyMovementSync>().Rotations.y;
+		float health = base.GetComponent<PlayerStats>().health;
 		foreach (ReferenceHub referenceHub in ReferenceHub.Hubs.Values)
 		{
-			if (!(PlayerManager.localPlayer == referenceHub.gameObject) && referenceHub.characterClassManager.CurClass == RoleType.Spectator)
+			if (!(PlayerManager.localPlayer == referenceHub.gameObject) && referenceHub.characterClassManager.CurClass == RoleType.Spectator && !referenceHub.gameObject.GetComponent<CharacterClassManager>().GetComponent<ServerRoles>().OverwatchEnabled)
 			{
 				referenceHub.characterClassManager.SetPlayersClass(curClass, referenceHub.gameObject, true, false);
 				if (curClass == RoleType.Scp079)
