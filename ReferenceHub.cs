@@ -12,7 +12,7 @@ public partial class ReferenceHub : MonoBehaviour
 	{
 		ReferenceHub.Hubs.Remove(base.gameObject);
 		RoleType curClass = base.gameObject.GetComponent<CharacterClassManager>().CurClass;
-		if (curClass == RoleType.Spectator)
+		if (curClass == RoleType.Spectator || curClass == RoleType.Tutorial || curClass == RoleType.None)
 		{
 			return;
 		}

@@ -44,6 +44,7 @@
 	public Dictionary<int, ReferenceHub> visiblePlys;
     private bool neonScp096Rework = true;
 	
+	// Token: 0x060011BB RID: 4539 RVA: 0x00068C44 File Offset: 0x00066E44
 	internal void Init(RoleType classId, Role c)
 	{
 		this.iAm096 = (classId == RoleType.Scp096);
@@ -56,18 +57,27 @@
 			if (this.visiblePlys == null)
 			{
 				this.visiblePlys = new Dictionary<int, ReferenceHub>();
-				if (Scp096PlayerScript.VisiblePlyLists == null) 
+				if (Scp096PlayerScript.VisiblePlyLists == null)
 				{
-					VisiblePlyLists = new List<Dictionary<int, ReferenceHub>>();
+					Scp096PlayerScript.VisiblePlyLists = new List<Dictionary<int, ReferenceHub>>();
 				}
-				try { VisiblePlyLists.Add(this.visiblePlys); } catch { }
+				if (!this.stopTheShit) {
+					Scp096PlayerScript.VisiblePlyLists.Add(this.visiblePlys);
+				}
+				stopTheShit = true;
 			}
 			this.neonScp096Rework = ConfigFile.ServerConfig.GetBool("neon_scp096", true);
 			return;
 		}
+		if (stopTheShit) {
+			try {Scp096PlayerScript.VisiblePlyLists.Remove(this.visiblePlys);} catch {}
+		}
 		this._processLookingQueue = null;
 		this.visiblePlys = null;
+		
+		stopTheShit = false;
 	}
+	public bool stopTheShit;
 	public static List<Dictionary<int, ReferenceHub>> VisiblePlyLists { private set; get; }
 	
 	private void ProcessLooking()
@@ -166,28 +176,31 @@
 			}), 1U, false);
 			yield return Timing.WaitForSeconds(0.5f);
 		}
-		// This also pisses Reddking off. It should be Scp096PlayerScript.RageState.Cooldown, apparently. 
-		this.Networkenraged = Scp096PlayerScript.RageState.NotEnraged;
+		this._cooldown = 10f;
+		this.Networkenraged = Scp096PlayerScript.RageState.Cooldown;
 		this.gameObject.GetComponent<ServerRoles>().BypassMode = false;
 		Timing.KillCoroutines("punish");
 		yield break;
 	}
-	// Same as Joker's but balanced towards rewarding good players over bad players. Yeah, it might have been better to do 1.20f and 90 * multi.
+	// Same as Joker's but balanced towards rewarding good players over bad players.
 	private IEnumerator<float> Punish(ReferenceHub rh)
 	{
-		if(rh == null) yield break;
-		yield return MEC.Timing.WaitForSeconds(5.5f);
-		int counter = 0;
-		while (this.Networkenraged == Scp096PlayerScript.RageState.Enraged && this.gameObject.GetComponent<CharacterClassManager>().NetworkCurClass == RoleType.Scp096)
+		if (rh == null)
 		{
-			counter++;
-			float multi = Mathf.Pow(1.70f, counter);
-			int dmg = Mathf.FloorToInt(20 * multi);
-			rh.playerStats.HurtPlayer(
-				new PlayerStats.HitInfo(dmg, rh.nicknameSync.MyNick, DamageTypes.Decont,
-					rh.queryProcessor.PlayerId), rh.gameObject);
-			yield return MEC.Timing.WaitForSeconds(5f);
+			yield break;
 		}
+		yield return Timing.WaitForSeconds(5.5f);
+		int counter = 0;
+		while (this.Networkenraged == Scp096PlayerScript.RageState.Enraged && base.gameObject.GetComponent<CharacterClassManager>().NetworkCurClass == RoleType.Scp096)
+		{
+			int num = counter;
+			counter = num + 1;
+			float num2 = Mathf.Pow(1.5f, (float)num);
+			int num3 = Mathf.FloorToInt(100f * num2);
+			if (num > 0) rh.playerStats.HurtPlayer(new PlayerStats.HitInfo((float)num3, rh.nicknameSync.MyNick, DamageTypes.Decont, rh.queryProcessor.PlayerId), rh.gameObject);
+			yield return Timing.WaitForSeconds(7.5f);
+		}
+		yield break;
 	}
 	
 	// Literally pasted from Joker. Thanks m8.
@@ -225,6 +238,7 @@
 			{
 				this.ProcessLooking();
 			}
+			else if (this.enraged == Scp096PlayerScript.RageState.Cooldown) this.DeductCooldown();
 		}
 		else
 		{
